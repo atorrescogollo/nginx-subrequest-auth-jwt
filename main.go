@@ -1,7 +1,7 @@
 package main
 
 import (
-	"crypto/ecdsa"
+	"crypto/rsa"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -48,7 +48,7 @@ func init() {
 }
 
 type server struct {
-	PublicKey    *ecdsa.PublicKey
+	PublicKey    *rsa.PublicKey
 	Logger       logger.Logger
 	ClaimsSource string
 	StaticClaims []map[string][]string
@@ -67,7 +67,7 @@ func newServer(logger logger.Logger, configFilePath string) (*server, error) {
 	}
 
 	// TODO: Only supports a single EC PubKey for now
-	pubkey, err := jwt.ParseECPublicKeyFromPEM([]byte(config.ValidationKeys[0].KeyMaterial))
+	pubkey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(config.ValidationKeys[0].KeyMaterial))
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +192,7 @@ func (s *server) validateDeviceToken(r *http.Request) bool {
 	var claims jwt.MapClaims
 	token, err := request.ParseFromRequestWithClaims(r, request.AuthorizationHeaderExtractor, &claims, func(token *jwt.Token) (interface{}, error) {
 		// TODO: Only supports EC for now
-		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 		return s.PublicKey, nil
